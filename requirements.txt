@@ -9,3 +9,4 @@ langchain-openai
 faiss-cpu
 google-generativeai
 openai
+httpx
