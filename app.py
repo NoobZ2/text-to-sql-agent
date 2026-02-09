@@ -278,6 +278,7 @@ def get_sql_chain(retriever_schema, retriever_examples, model_name, api_key):
     * [Check] 是否存在多表连接？连接键是否在 Schema 中存在？
     * [Check] WHERE 条件中的时间范围是否符合用户描述？
     * [Check] 聚合计算（Sum/Count）是否正确配合了 Group By？
+    * [Check] 在编写代码的时候是否避免使用过多的临时表？你需要避免使用过多的临时表，从而实现更好的性能
 
     ### 步骤 3: SQL 代码
     请生成最终的 SQL 代码。
@@ -445,3 +446,4 @@ if prompt := st.chat_input("请输入查询需求..."):
             st.error(f"⚠️ 发生错误: {str(e)}")
 
             st.caption("建议检查 API Key 额度或网络连接。")
+
