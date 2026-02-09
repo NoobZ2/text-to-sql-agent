@@ -150,18 +150,39 @@ def get_llm(provider, model_name, api_key):
         )
 
 def get_embeddings(provider, api_key):
+    """根据不同的供应商选择正确的向量模型"""
     if provider == "google":
-        return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=api_key)
+        return GoogleGenerativeAIEmbeddings(
+            model="models/embedding-001", # 确保模型名正确
+            google_api_key=api_key
+        )
+    
+    # 针对 OpenAI 兼容接口的供应商进行细分
+    base_urls = {
+        "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "kimi": "https://api.moonshot.cn/v1",
+        "openai": "https://api.openai.com/v1"
+    }
+    
+    # 根据供应商选择对应的 Embedding 模型名
+    # Qwen: text-embedding-v1, v2, v3
+    # Kimi: 目前主要支持对话，Embedding 接口可能需要查阅其最新文档（通常是 moonshot-v1）
+    # OpenAI: text-embedding-3-small 或 text-embedding-ada-002
+    
+    if provider == "qwen":
+        emb_model = "text-embedding-v2"  # 阿里通义千问推荐
+    elif provider == "kimi":
+        # 注意：Kimi 的 Embedding 接口有时与对话接口不同，
+        # 如果报错，建议 Kimi 环境下暂时降级使用通用的 HuggingFace Embedding 或提示用户。
+        emb_model = "moonshot-v1" 
     else:
-        # 注意：Kimi/Qwen 的 Embedding 模型名不同，这里简化处理
-        # 实际生产中建议针对 provider 判断具体的 embedding model 名
-        emb_model = "text-embedding-v2" if provider == "qwen" else "text-embedding-ada-002"
-        base_urls = {
-            "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            "kimi": "https://api.moonshot.cn/v1",
-            "openai": "https://api.openai.com/v1"
-        }
-        return OpenAIEmbeddings(model=emb_model, openai_api_key=api_key, base_url=base_urls.get(provider))
+        emb_model = "text-embedding-3-small"
+
+    return OpenAIEmbeddings(
+        model=emb_model, 
+        openai_api_key=api_key, 
+        base_url=base_urls.get(provider)
+    )
 
 
 
@@ -537,4 +558,5 @@ if prompt := st.chat_input("请输入查询需求..."):
 
         except Exception as e:
             st.error(f"⚠️ 发生错误: {str(e)}")
+
             st.caption("建议检查 API Key 额度或网络连接。")
