@@ -5,6 +5,7 @@ langchain
 langchain-core
 langchain-community
 langchain-google-genai
+langchain-openai
 faiss-cpu
-gspread
-google-auth
+google-generativeai
+openai
