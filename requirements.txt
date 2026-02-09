@@ -10,3 +10,5 @@ faiss-cpu
 google-generativeai
 openai
 httpx
+sentence-transformers
+langchain-huggingface
