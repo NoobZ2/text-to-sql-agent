@@ -149,40 +149,32 @@ def get_llm(provider, model_name, api_key):
             streaming=True
         )
 
-def get_embeddings(provider, api_key):
-    """根据不同的供应商选择正确的向量模型"""
-    if provider == "google":
-        return GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001", # 确保模型名正确
-            google_api_key=api_key
-        )
-    
-    # 针对 OpenAI 兼容接口的供应商进行细分
-    base_urls = {
-        "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "kimi": "https://api.moonshot.cn/v1",
-        "openai": "https://api.openai.com/v1"
-    }
-    
-    # 根据供应商选择对应的 Embedding 模型名
-    # Qwen: text-embedding-v1, v2, v3
-    # Kimi: 目前主要支持对话，Embedding 接口可能需要查阅其最新文档（通常是 moonshot-v1）
-    # OpenAI: text-embedding-3-small 或 text-embedding-ada-002
-    
-    if provider == "qwen":
-        emb_model = "text-embedding-v2"  # 阿里通义千问推荐
-    elif provider == "kimi":
-        # 注意：Kimi 的 Embedding 接口有时与对话接口不同，
-        # 如果报错，建议 Kimi 环境下暂时降级使用通用的 HuggingFace Embedding 或提示用户。
-        emb_model = "moonshot-v1" 
-    else:
-        emb_model = "text-embedding-3-small"
 
-    return OpenAIEmbeddings(
-        model=emb_model, 
-        openai_api_key=api_key, 
-        base_url=base_urls.get(provider)
-    )
+
+from langchain_huggingface import HuggingFaceEmbeddings
+
+def get_embeddings(provider=None, api_key=None):
+    """
+    使用本地免费的 HuggingFace 模型进行向量化。
+    完全不依赖供应商的 API Key。
+    """
+    # 推荐模型：shibing624/text2vec-base-chinese (专门针对中文优化，体积小，速度快)
+    # 或者使用通用国际模型：sentence-transformers/all-MiniLM-L6-v2
+    model_name = "shibing624/text2vec-base-chinese"
+    
+    # 注意：在 Streamlit Cloud 首次运行时，会自动从 HuggingFace 下载模型文件
+    # 之后会缓存，不会重复下载。
+    try:
+        encode_kwargs = {'normalize_embeddings': True} # 归一化，提高余弦相似度计算准确性
+        embeddings = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs={'device': 'cpu'}, # 云端容器通常只有 CPU
+            encode_kwargs=encode_kwargs
+        )
+        return embeddings
+    except Exception as e:
+        st.error(f"本地 Embedding 模型加载失败: {e}")
+        return None
 
 
 
@@ -349,7 +341,13 @@ def init_knowledge_base(api_key,provider):
     #embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=api_key_trigger)
     
     # 动态选择 Embedding
-    embeddings = get_embeddings(provider, api_key)
+    #embeddings = get_embeddings(provider, api_key)
+
+    # 强制使用本地免费 Embedding，不再受 API Key 限制
+    embeddings = get_embeddings()
+    
+    if embeddings is None:
+        st.stop()
     
     #retriever_s = FAISS.from_documents(schema_docs, embeddings).as_retriever(search_kwargs={"k": 10})
     #retriever_e = FAISS.from_documents(qa_docs, embeddings).as_retriever(search_kwargs={"k": 5})
@@ -560,3 +558,4 @@ if prompt := st.chat_input("请输入查询需求..."):
             st.error(f"⚠️ 发生错误: {str(e)}")
 
             st.caption("建议检查 API Key 额度或网络连接。")
+
