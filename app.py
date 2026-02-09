@@ -362,6 +362,22 @@ with st.sidebar:
                 except Exception as e:
                     st.error(str(e))
 
+
+    st.divider()
+    if "messages" in st.session_state and st.session_state.messages:
+        st.subheader("📜 最近 5 次对话记录")
+        msgs = st.session_state.messages
+        last_n_msgs = msgs[-10:]
+        for i in range(0, len(last_n_msgs), 2):
+            if i + 1 < len(last_n_msgs):
+                q_text = last_n_msgs[i].content
+                a_text = last_n_msgs[i+1].content
+                with st.expander(f"QA {i//2 + 1}: {q_text[:15]}...", expanded=False):
+                    st.markdown("**问:**")
+                    st.caption(q_text)
+                    st.markdown("**答:**")
+                    st.markdown(a_text)
+
     if st.button("🔄 重置/清空对话"):
         st.session_state.messages = []
         st.rerun()
@@ -427,4 +443,5 @@ if prompt := st.chat_input("请输入查询需求..."):
 
         except Exception as e:
             st.error(f"⚠️ 发生错误: {str(e)}")
+
             st.caption("建议检查 API Key 额度或网络连接。")
