@@ -503,7 +503,7 @@ if has_files:
     rs, re_ = init_knowledge_base(api_key,target_provider)
     if rs:
         # 获取链对象，传入当前选择的模型和 API Key
-        chain = get_sql_chain(rs, re_, selected_model, api_key)
+        chain = get_sql_chain(rs, re_, target_model, api_key)
     else:
         st.warning("知识库文件解析失败，请检查 Excel 格式。")
         st.stop()
@@ -558,4 +558,5 @@ if prompt := st.chat_input("请输入查询需求..."):
             st.error(f"⚠️ 发生错误: {str(e)}")
 
             st.caption("建议检查 API Key 额度或网络连接。")
+
 
